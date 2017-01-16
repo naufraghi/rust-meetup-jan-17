@@ -4,6 +4,7 @@
 import asyncio
 import sys
 
+
 class ChatServer:
     """
     Async chat server esample.
@@ -21,11 +22,10 @@ class ChatServer:
         for reader, writer in self.connections.values():
             writer.write((message + "\n").encode("utf-8"))
 
-    @asyncio.coroutine
-    def prompt_username(self, reader, writer):
+    async def prompt_username(self, reader, writer):
         while True:
             writer.write("Enter username: ".encode("utf-8"))
-            data = (yield from reader.readline()).decode("utf-8")
+            data = (await reader.readline()).decode("utf-8")
             if not data:
                 return None
             username = data.strip()
@@ -34,24 +34,22 @@ class ChatServer:
                 return username
             writer.write("Sorry, that username is taken.\n".encode("utf-8"))
 
-    @asyncio.coroutine
-    def handle_connection(self, username, reader):
+    async def handle_connection(self, username, reader):
         while True:
-            data = (yield from reader.readline()).decode("utf-8")
+            data = (await reader.readline()).decode("utf-8")
             if not data:
                 del self.connections[username]
                 return None
             self.broadcast(username + ": " + data.strip())
 
-    @asyncio.coroutine
-    def accept_connection(self, reader, writer):
+    async def accept_connection(self, reader, writer):
         writer.write(("Welcome to " + self.server_name + "\n").encode("utf-8"))
-        username = (yield from self.prompt_username(reader, writer))
+        username = (await self.prompt_username(reader, writer))
         if username is not None:
             self.broadcast("User %r has joined the room" % (username,))
-            yield from self.handle_connection(username, reader)
+            await self.handle_connection(username, reader)
             self.broadcast("User %r has left the room" % (username,))
-        yield from writer.drain()
+        await writer.drain()
 
 
 def main(argv):
